@@ -20,6 +20,18 @@ class cars extends AesAuthorization {
 		$this->uri = $uri;
 	}
 	
+/*
+ * @function name	: processQuery
+ * @purpose			: function to process database queries and return result if needed
+ * @arguments		: Following are the arguments to be passed:
+		* sql			: sql query to be passed to process
+		* returnFlag    : flag to see if need to return data from it
+ * @return			: data to be fethched from db
+ * @created by		: shivam sharma
+ * @created on		: 4th feb 2017
+ * @description		: NA
+*/
+	
 	function processQuery($sql = NULL, $returnFlag = false) {
 		$con = mysqli_connect($this->dbHost,$this->dbUser,$this->dbPass,$this->dbName);
 		$row1 = array();
@@ -34,13 +46,24 @@ class cars extends AesAuthorization {
 			$this->responseFlag = false;
 		}
 	}
-	
+
+/*
+ * @function name	: processRequest
+ * @purpose			: function to process request
+ * @arguments		: NA
+ * @return			: NONE
+ * @created by		: shivam sharma
+ * @created on		: 4th feb 2017
+ * @description		: process request and print json data 
+*/	
 	function processRequest() {
 		switch($this->method){
+			// code to process get request using id or without id
 			case 'GET':
 				$id = isset($this->uri[2])?$this->uri[2]:'';
 				$this->listCars($id);
 			break;
+			// code to process update car data
 			case 'PUT':
 				$id = $this->uri[2];
 				$isRating = isset($this->uri[3])?true:false;
@@ -49,6 +72,7 @@ class cars extends AesAuthorization {
 				}
 				$this->createOrUpdate($this->arguments,$id,$isRating);
 			break;
+			// code to process update car data
 			case 'PATCH':
 				$id = $this->uri[2];
 				$isRating = isset($this->uri[3])?true:false;
@@ -57,11 +81,13 @@ class cars extends AesAuthorization {
 				}
 				$this->createOrUpdate($this->arguments,$id);
 			break;
+			// code to delete car data
 			case 'DELETE':
 				$this->verifyToken();
 				$id = $this->uri[2];
 				$this->deleteCar($id);
 			break;
+			// code to create car data
 			case 'POST':
 				$this->verifyToken();
 				$this->createOrUpdate($this->arguments);
@@ -131,11 +157,25 @@ class cars extends AesAuthorization {
 		echo $this->encrypt($timestamp);
 	}
 	
+	
+/*
+ * @function name	: verifyToken
+ * @purpose			: function to verify a request if needed
+ * @arguments		: NA
+ * @return			: NONE
+ * @created by		: shivam sharma
+ * @created on		: 4th feb 2017
+ * @description		: verify token will work in following steps:
+	** User can get a new token as mentioned in redme.md file
+	** the token is basically aes encrypted string of current timestamp
+	** the function will get token from passed argument and will decrypt and calculate time in milisec from current time, if time difference will be < 600 the request will process otherwise requester will have to generate a new token and send it along
+	** i have created token just for testing purpose otherwise requester will have aes salt and IV to encrypt a key which will be sent out in request.
+*/	
 	function verifyToken() {
 		if ( !empty($this->token) ) {
 			$sentTimestamp = $this->decrypt($this->token);
 			$currTimestamp = strtotime(date("Y-m-d h:i:s"));
-			if ( ($currTimestamp-$sentTimestamp) > 6000 ) {
+			if ( ($currTimestamp-$sentTimestamp) > 600 ) { 
 				$this->result['status'] = 500;
 				$this->result['response']['message'] = "Invalid token, Plesae try again.";
 				echo json_encode($this->result);
@@ -148,6 +188,7 @@ class cars extends AesAuthorization {
 	
 }
 parse_str(file_get_contents("php://input"),$post_vars);
+
 if (isset($post_vars) && !empty($post_vars)) {
 	$params = $post_vars;
 } else {
